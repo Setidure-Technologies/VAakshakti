@@ -1,0 +1,40 @@
+fastapi
+uvicorn[standard]
+python-multipart
+sqlmodel==0.0.12 # Pinning to a specific version
+asyncpg # For async PostgreSQL interaction
+psycopg2-binary # Fallback or for synchronous parts if any, often good to have
+bcrypt>=3.2.2,<4.1.0 # Explicitly add bcrypt
+passlib[bcrypt] # For password hashing
+PyJWT # For JWT token handling
+python-jose[cryptography] # Alternative for JWT, often used with FastAPI examples, provides JWS, JWE, JWK, JWA. PyJWT is also fine.
+faster-whisper==1.0.1
+openai-whisper==20240930
+requests
+pydub
+torch>=2.0
+torchaudio
+Box
+
+# Background task processing
+celery[redis]
+redis
+
+# Advanced language analysis
+librosa>=0.10.0
+pyAudioAnalysis
+transformers>=4.30.0
+speechbrain
+textblob
+vaderSentiment
+nltk
+numpy
+scipy
+scikit-learn
+
+# Additional utilities
+python-dateutil
+apscheduler
+websockets
+aiofiles
+python-dotenv

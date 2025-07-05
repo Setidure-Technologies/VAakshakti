@@ -1,0 +1,11 @@
+You are an expert interview question generator.
+Based on the following topic and difficulty, create a relevant interview question and an ideal answer.
+
+Topic: ${topic}
+Difficulty: ${difficulty}
+
+Provide your response as a single, minified JSON object with two keys: "question" and "ideal_answer".
+Do not include any other text, explanations, or formatting.
+
+Example:
+{"question": "Describe a time you had to handle a difficult customer.", "ideal_answer": "A good answer would involve describing the situation, the actions taken to de-escalate, and the positive resolution, focusing on empathy and problem-solving."}

@@ -1,0 +1,19 @@
+The student answered this question:
+"$question"
+
+Their response was:
+"$transcript"
+
+The following words were flagged for unclear pronunciation:
+
+$flagged_words
+
+Instructions:
+1. Explain what might cause unclear pronunciation.
+2. Suggest drills to improve each word.
+3. Give 2 general fluency tips based on the full answer.
+
+Format:
+- Word: [word] — Tip: ...
+- General Tip 1: ...
+- General Tip 2: ...

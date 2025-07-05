@@ -1,0 +1,95 @@
+version: "3.9"
+
+services:
+  vaakshakti-db:
+    image: postgres:15
+    container_name: vaakshakti_postgres_db
+    environment:
+      POSTGRES_USER: vaakshakti_user
+      POSTGRES_PASSWORD: vaakshakti_password
+      POSTGRES_DB: vaakshakti_db
+    ports:
+      - "1211:5432" # Host port 1211 maps to container port 5432
+    volumes:
+      - vaakshakti_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vaakshakti_user -d vaakshakti_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:alpine
+    container_name: vaakshakti_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  speech-tutor: # This will be our FastAPI application
+    build: . # Assumes Dockerfile is set up for the FastAPI app
+    container_name: vaakshakti_app
+    command: uvicorn
+    ports:
+      - "1212:1212" # Expose FastAPI app to host
+    runtime: nvidia
+    environment:
+      - OLLAMA_HOST=http://host.docker.internal:11434 # Ollama is on the host
+      - DATABASE_URL=postgresql+asyncpg://vaakshakti_user:vaakshakti_password@vaakshakti-db:5432/vaakshakti_db
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=ae5af0748ac726d927ee24ca56d24b273b838c221cbd08625f2dc0b4b82c4cdb
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # Allow reaching host services like Ollama
+    depends_on:
+      vaakshakti-db:
+        condition: service_healthy # Waits for DB to be healthy
+      redis:
+        condition: service_healthy # Waits for Redis to be healthy
+    restart: always
+    volumes: # Mount the code so changes are reflected, and for shared temp_uploads
+      - .:/app
+
+  vaakshakti-frontend:
+    build:
+      context: ./vaakshakti-speech-spark-backened
+      dockerfile: Dockerfile
+    container_name: vaakshakti_frontend
+    ports:
+      - "1213:80"
+    depends_on:
+      - speech-tutor
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  celery-worker:
+    build: . # Uses the same Dockerfile as the FastAPI app
+    container_name: vaakshakti_celery_worker
+    command: celery
+    runtime: nvidia
+    environment:
+      - OLLAMA_HOST=http://host.docker.internal:11434 # Ollama is on the host
+      - DATABASE_URL=postgresql+asyncpg://vaakshakti_user:vaakshakti_password@vaakshakti-db:5432/vaakshakti_db
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=0ec552f3f82bbf0350401eddf2be25674220c3a6078b56af9cd124c7dff1f986
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # Allow reaching host services like Ollama
+    depends_on:
+      vaakshakti-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      # speech-tutor: # Not strictly necessary for worker to start, but tasks are produced by it
+      #   condition: service_started
+    restart: always
+    volumes: # Mount the code so changes are reflected if not re-building image every time (for dev)
+      - .:/app # Mounts current directory (project root) to /app in container
+
+volumes:
+  vaakshakti_postgres_data:
+    driver: local
